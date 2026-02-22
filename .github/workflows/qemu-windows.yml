@@ -1,0 +1,41 @@
+name: Run Windows 10 QEMU VM
+
+on:
+  workflow_dispatch:
+
+jobs:
+  qemu-win10:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install QEMU
+        run: |
+          sudo apt update
+          sudo apt install -y qemu-kvm qemu-system-x86 qemu-utils
+
+      - name: Create disk image
+        run: |
+          qemu-img create -f qcow2 win10.qcow2 40G
+
+      - name: Start Windows 10 VM
+        run: |
+          qemu-system-x86_64 \
+            -enable-kvm \
+            -m 4096 \
+            -smp 2 \
+            -cpu host \
+            -drive file=win10.qcow2,format=qcow2 \
+            -cdrom WIN10TP.iso \
+            -boot d \
+            -vnc 127.0.0.1:0 \
+            -net nic \
+            -net user \
+            -daemonize
+
+          echo "VNC server running on 127.0.0.1:5900"
+
+      - name: Keep runner alive
+        run: sleep 3600
